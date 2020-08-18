@@ -23,8 +23,10 @@ namespace RestServiceProject.Mapper
                 .ForMember(uvm => uvm.PasswordSalt, o => o.MapFrom(GetPasswordSaltHashString));
 
             CreateMap<UserInputModel, User>()
-                .ForMember(u => u.Password, o => o.Ignore())
-                .ForMember(u => u.PasswordSalt, o => o.Ignore());
+                .IgnoreAllPropertiesWithAnInaccessibleSetter()
+                .ForPath(s => s.Id, opt => opt.Ignore())
+                .ForMember(u => u.Password, o => o.MapFrom(GetPasswordHash))
+                .ForMember(u => u.PasswordSalt, o => o.MapFrom(GetPasswordSalt));
         }
 
         private string GetPasswordHashString(User user, UserViewModel uvm)
@@ -35,6 +37,15 @@ namespace RestServiceProject.Mapper
         private string GetPasswordSaltHashString(User user, UserViewModel uvm)
         {
             return Encoding.UTF8.GetString(user.PasswordSalt);
+        }
+
+        private byte[] GetPasswordHash(UserInputModel uim, User u)
+        {
+            return PasswordEncryptor.Hash(uim.Password).PasswordHash;
+        }
+        private byte[] GetPasswordSalt(UserInputModel uim, User u)
+        {
+            return PasswordEncryptor.Hash(uim.Password).PasswordSalt;
         }
     }
 }

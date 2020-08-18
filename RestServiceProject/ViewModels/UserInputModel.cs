@@ -14,6 +14,5 @@ namespace RestServiceProject.ViewModels
         public string Password { get; set; }
         [DataType(DataType.Password)]
         public string PasswordConfirm { get; set; }
-
     }
 }

@@ -30,15 +30,9 @@ namespace RestServiceProject.Data
             var entries = ChangeTracker.Entries();
             foreach (var entry in entries)
             {
-                if (entry.Entity is ITrackable trackable)
+                if (entry.Entity is ITrackable trackable && entry.State == EntityState.Added)
                 {
-                    var now = DateTime.UtcNow;
-                    switch (entry.State)
-                    {
-                        case EntityState.Added:
-                            trackable.CreatedDate = now;
-                            break;
-                    }
+                    trackable.CreatedDate = DateTime.Now;
                 }
             }
         }

@@ -17,12 +17,12 @@ namespace RestServiceProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class User : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
         private readonly IMapper _mapper;
 
-        public User(ApplicationDBContext context,
+        public UserController(ApplicationDBContext context,
             IMapper mapper)
         {
             this._context = context;
@@ -42,12 +42,11 @@ namespace RestServiceProject.Controllers
         [HttpGet("{id}", Name = nameof(GetUser))]
         public async Task<ActionResult<UserViewModel>> GetUser(Guid id)
         {
-            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == (Guid?)id);
-            if (dbUser == null)
-            {
-                return NotFound();
-            }
-            var userToReturn = _mapper.Map<UserViewModel>(dbUser);
+            var userSearch = await FindUser(id);
+
+            if (!userSearch.Exists) return NotFound();
+
+            var userToReturn = _mapper.Map<UserViewModel>(userSearch.User);
             return Ok(userToReturn);
         }
 
@@ -76,15 +75,12 @@ namespace RestServiceProject.Controllers
             if (userInputModel.Password != userInputModel.PasswordConfirm)
                 return BadRequest(new { ErrorDescription = "Password confirmation failed, please try again" });
 
-            if (!await _context.Users.AnyAsync(u => u.Id == id))
-            {
-                return NotFound();
-            }
+            var userSearch = await FindUser(id);
+            if (!userSearch.Exists) return NotFound();
 
-            var user = _mapper.Map<Models.User>(userInputModel);
-            user.Id = id; // Needed for EFCore entity tracking
-            user.Password = PasswordEncryptor.Hash(userInputModel.Password).PasswordHash;
-            user.PasswordSalt = PasswordEncryptor.Hash(userInputModel.Password).PasswordSalt;
+            // automapper profile hashes password/salt
+            var user = _mapper.Map<UserInputModel, User>(userInputModel, userSearch.User);
+            user.Id = id; // Needed for EFCore entity 
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
@@ -94,8 +90,33 @@ namespace RestServiceProject.Controllers
 
         // DELETE api/<User>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<ActionResult> Delete(Guid id)
         {
+            var userSearch = await FindUser(id);
+            if (!userSearch.Exists) return NotFound();
+
+            _context.Users.Remove(userSearch.User);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [NonAction]
+        private async Task<FindUserResults> FindUser(Guid userId)
+        {
+            var dbUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == (Guid?)userId);
+
+            var resultsObject = new FindUserResults();
+            resultsObject.Exists = dbUser == null ? false : true;
+            resultsObject.User = resultsObject.Exists ? dbUser : null;
+
+            return resultsObject;
+        }
+
+        private struct FindUserResults
+        {
+            public Models.User User { get; set; }
+            public bool Exists { get; set; }
         }
     }
 }
