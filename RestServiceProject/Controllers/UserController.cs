@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestServiceProject.Data;
+using RestServiceProject.Helpers;
 using RestServiceProject.Models;
 using RestServiceProject.Service;
 using RestServiceProject.ViewModels;
@@ -54,12 +55,13 @@ namespace RestServiceProject.Controllers
         [HttpPost]
         public async Task<ActionResult<UserViewModel>> Post([FromBody] UserInputModel userInputModel)
         {
+            // if passwords don't match
             if (userInputModel.Password != userInputModel.PasswordConfirm)
-                return BadRequest(new { ErrorDescription = "Password confirmation failed, please try again" });
+                return BadRequest(new { ErrorDescription = AppConstants.PasswordMatchFailMessage });
 
-            var user = _mapper.Map<Models.User>(userInputModel);
-            user.Password = PasswordEncryptor.Hash(userInputModel.Password).PasswordHash;
-            user.PasswordSalt = PasswordEncryptor.Hash(userInputModel.Password).PasswordSalt;
+            // automapper profile hashes password/salt in Profile.cs
+            var user = _mapper.Map<User>(userInputModel);
+
             await _context.AddAsync(user);
             await _context.SaveChangesAsync();
 
@@ -73,12 +75,12 @@ namespace RestServiceProject.Controllers
         public async Task<ActionResult<UserViewModel>> Put(Guid id, [FromBody] UserInputModel userInputModel)
         {
             if (userInputModel.Password != userInputModel.PasswordConfirm)
-                return BadRequest(new { ErrorDescription = "Password confirmation failed, please try again" });
+                return BadRequest(new { ErrorDescription = AppConstants.PasswordMatchFailMessage });
 
             var userSearch = await FindUser(id);
             if (!userSearch.Exists) return NotFound();
 
-            // automapper profile hashes password/salt
+            // automapper profile hashes password/salt in Profile.cs
             var user = _mapper.Map<UserInputModel, User>(userInputModel, userSearch.User);
             user.Id = id; // Needed for EFCore entity 
 

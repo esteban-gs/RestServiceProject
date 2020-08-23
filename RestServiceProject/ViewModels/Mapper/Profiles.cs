@@ -17,6 +17,8 @@ namespace RestServiceProject.Mapper
     {
         public Profiles()
         {
+            //CreateMap<TSource, TDestination>
+
             CreateMap<User, UserViewModel>()
                 .ForMember(uvm => uvm.Id, o => o.MapFrom(s => s.Id.ToString()))
                 .ForMember(uvm => uvm.Password, o => o.MapFrom(GetPasswordHashString))
