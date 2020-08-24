@@ -18,6 +18,16 @@ namespace RestServiceProject.Data
                 return;   // Data was already seeded
             }
 
+            List<User> users = GenerateUsers();
+
+            context.Users.AddRange(users);
+
+            context.SaveChanges();
+
+        }
+
+        public static List<User> GenerateUsers()
+        {
             // a list of users to seed
             List<User> users = new List<User>();
 
@@ -40,10 +50,7 @@ namespace RestServiceProject.Data
                     });
             }
 
-            context.Users.AddRange(users);
-
-            context.SaveChanges();
-
+            return users;
         }
     }
 }

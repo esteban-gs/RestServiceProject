@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RestServiceProject.Data;
+using RestServiceProject.Data.Repositories;
 
 namespace RestServiceProject
 {
@@ -32,6 +33,7 @@ namespace RestServiceProject
             services.AddDbContext<ApplicationDBContext>(options =>
                 options.UseInMemoryDatabase(databaseName: "RestServiceProject"));
             services.AddScoped<ApplicationDBContext>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             services.AddAutoMapper(typeof(Startup));
         }

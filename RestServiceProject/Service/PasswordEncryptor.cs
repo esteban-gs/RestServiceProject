@@ -13,14 +13,13 @@ namespace RestServiceProject.Service
     {
         public struct PassworEncryptorResult
         {
-            public byte[] PasswordHash { get;  set; }
+            public byte[] PasswordHash { get; set; }
             public byte[] PasswordSalt { get; set; }
         }
 
         public static PassworEncryptorResult Hash(string password)
         {
             PassworEncryptorResult results = new PassworEncryptorResult();
-
             byte[] passwordHash, passwordSalt;
             CreatePasswordHash(password, out passwordHash, out passwordSalt);
             results.PasswordHash = passwordHash;
@@ -31,11 +30,9 @@ namespace RestServiceProject.Service
 
         private static void CreatePasswordHash(string password, out byte[] passwordHash, out byte[] passwordSalt)
         {
-            using (var hmac = new HMACSHA512())
-            {
-                passwordSalt = hmac.Key;
-                passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            }
+            using var hmac = new HMACSHA512();
+            passwordSalt = hmac.Key;
+            passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
         }
     }
 

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestServiceProject.Data;
+using RestServiceProject.Data.Repositories;
 using RestServiceProject.Helpers;
 using RestServiceProject.Models;
 using RestServiceProject.Service;
@@ -20,21 +21,22 @@ namespace RestServiceProject.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly ApplicationDBContext _context;
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UserController(ApplicationDBContext context,
-            IMapper mapper)
+        public UserController(
+            IMapper mapper,
+            IUnitOfWork unitOfWork)
         {
-            this._context = context;
             this._mapper = mapper;
+            this._unitOfWork = unitOfWork;
         }
 
         // GET: api/<User>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserViewModel>>> Get()
         {
-            var dbUsers = await _context.Users.ToListAsync();
+            var dbUsers = await _unitOfWork.Repository<User>().FindAll();
             var usersToReturn = _mapper.Map<IEnumerable<UserViewModel>>(dbUsers);
             return Ok(usersToReturn);
         }
@@ -43,7 +45,7 @@ namespace RestServiceProject.Controllers
         [HttpGet("{id}", Name = nameof(GetUser))]
         public async Task<ActionResult<UserViewModel>> GetUser(Guid id)
         {
-            var userSearch = await FindUser(id);
+            FindUserResults userSearch = await FindUser(id);
 
             if (!userSearch.Exists) return NotFound();
 
@@ -62,8 +64,8 @@ namespace RestServiceProject.Controllers
             // automapper profile hashes password/salt in Profile.cs
             var user = _mapper.Map<User>(userInputModel);
 
-            await _context.AddAsync(user);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Repository<User>().Add(user);
+            await _unitOfWork.Complete();
 
             var userToReturn = _mapper.Map<UserViewModel>(user);
 
@@ -84,8 +86,9 @@ namespace RestServiceProject.Controllers
             var user = _mapper.Map<UserInputModel, User>(userInputModel, userSearch.User);
             user.Id = id; // Needed for EFCore entity 
 
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
+            // Db transaction
+            _unitOfWork.Repository<User>().Update(user);
+            await _unitOfWork.Complete();
 
             return NoContent();
         }
@@ -97,8 +100,9 @@ namespace RestServiceProject.Controllers
             var userSearch = await FindUser(id);
             if (!userSearch.Exists) return NotFound();
 
-            _context.Users.Remove(userSearch.User);
-            await _context.SaveChangesAsync();
+            // Db transaction
+            _unitOfWork.Repository<User>().Remove(userSearch.User);
+            await _unitOfWork.Complete();
 
             return NoContent();
         }
@@ -106,10 +110,10 @@ namespace RestServiceProject.Controllers
         [NonAction]
         private async Task<FindUserResults> FindUser(Guid userId)
         {
-            var dbUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == (Guid?)userId);
+            User dbUser = await _unitOfWork.Repository<User>().FindById(userId);
 
-            var resultsObject = new FindUserResults();
-            resultsObject.Exists = dbUser == null ? false : true;
+            var resultsObject = new FindUserResults(); 
+            resultsObject.Exists = dbUser != null;
             resultsObject.User = resultsObject.Exists ? dbUser : null;
 
             return resultsObject;
