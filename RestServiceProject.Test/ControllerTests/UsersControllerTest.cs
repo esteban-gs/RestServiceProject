@@ -10,11 +10,13 @@ using RestServiceProject.Test.TestData;
 using RestServiceProject.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using ValidationContext = System.ComponentModel.DataAnnotations.ValidationContext;
 
 namespace RestServiceProject.Test.ControllerTests
 {
@@ -52,6 +54,21 @@ namespace RestServiceProject.Test.ControllerTests
             // Get One
             _unitOfWork.Setup(repo => repo.Repository<User>().FindById(It.IsAny<Guid>()))
                 .ReturnsAsync((Guid id) => _testUserData.SingleOrDefault(u => u.Id == id));
+
+            // Add
+            _unitOfWork.Setup(repo => repo.Repository<User>().Add(It.IsAny<User>()))
+                .Callback((User user) =>
+                {
+                    user.Id = new Guid("ab2bd817-98cd-4cf3-a80a-53ea0cd9c200");
+                    _testUserData.Add(user);
+                }).Returns(Task.CompletedTask);
+
+            // Remove
+            _unitOfWork.Setup(repo => repo.Repository<User>().Remove(It.IsAny<User>()))
+                .Callback((User user) =>
+                {
+                    _testUserData.Remove(user);
+                });
 
             _userController = new UserController(_mapper, _unitOfWork.Object);
 
@@ -108,12 +125,8 @@ namespace RestServiceProject.Test.ControllerTests
         [Fact]
         public async Task GetById_ExistingGuidPassed_ReturnsOkResult()
         {
-            // Arrange
-            Func<User, bool> isFirstUser = u => u.Email.Contains("test1"); // existing user
-            var existingUser = _testUserData.FirstOrDefault(isFirstUser);
-
             // Act
-            var okResult = await _userController.GetUser(existingUser.Id);
+            var okResult = await _userController.GetUser(TestUsers.ExistingGuid);
 
             // Assert
             Assert.IsType<OkObjectResult>(okResult.Result);
@@ -122,17 +135,109 @@ namespace RestServiceProject.Test.ControllerTests
         [Fact]
         public void GetById_ExistingGuidPassed_ReturnsRightItem()
         {
-            // Arrange
-            Func<User, bool> isFirstUser = u => u.Email.Contains("test1"); // existing user
-            var existingUserId = _testUserData.FirstOrDefault(isFirstUser).Id;
-
             // Act
-            var okResult = _userController.GetUser(existingUserId).Result.Result as ObjectResult;
+            var okResult = _userController.GetUser(TestUsers.ExistingGuid).Result.Result as ObjectResult;
 
             // Assert
             Assert.IsType<UserViewModel>(okResult.Value);
-            Assert.Equal(existingUserId.ToString(), (okResult.Value as UserViewModel).Id);
+            Assert.Equal(TestUsers.ExistingGuid.ToString(), (okResult.Value as UserViewModel).Id);
         }
         #endregion GetByID
+
+        #region Add
+        [Fact]
+        public void Add_InvalidObjectPassed_ReturnsBadRequest()
+        {
+            // Arrange
+            var itemMissingEmail = new UserInputModel()
+            {
+                Email = String.Empty,
+                Password = TestUsers.TestPassWord,
+                PasswordConfirm = TestUsers.TestPassWord
+            };
+            _userController.ModelState.AddModelError("Email", "Required");
+
+            // Act 
+            var badResponse = _userController.Post(itemMissingEmail).Result.Result;
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(badResponse);
+        }
+
+        [Fact]
+        public void Add_ValidObjectPassed_RetrunsCreatedResource()
+        {
+            // Arrange
+            UserInputModel uim = new UserInputModel()
+            {
+                Email = TestUsers.PostEmail,
+                Password = TestUsers.TestPassWord,
+                PasswordConfirm = TestUsers.TestPassWord
+            };
+
+            // Act 
+            var createdResponse = _userController.Post(uim).Result.Result;
+
+            // Assert
+            Assert.IsType<CreatedAtRouteResult>(createdResponse);
+        }
+
+        [Fact]
+        public void Add_ValidObjectPassed_ReturnedResponseHasCreatedItem()
+        {
+            // Arrange
+            var testItem = new UserInputModel()
+            {
+                Email = TestUsers.PostEmail,
+                Password = TestUsers.TestPassWord,
+                PasswordConfirm = TestUsers.TestPassWord
+            };
+
+            // Act
+            var createdResponse = _userController.Post(testItem).Result.Result as CreatedAtRouteResult;
+            var item = createdResponse.Value as UserViewModel;
+
+            // Assert
+            Assert.IsType<UserViewModel>(item);
+            Assert.Equal(TestUsers.PostEmail, item.Email);
+        }
+
+        #endregion Add
+
+        #region Remove
+        [Fact]
+        public void Remove_NotExistingGuidPassed_ReturnsNotFoundResponse()
+        {
+            // Arrange
+            var notExistingGuid = Guid.NewGuid();
+
+            // Act
+            var badResponse = _userController.Delete(notExistingGuid).Result;
+
+            // Assert
+            Assert.IsType<NotFoundResult>(badResponse);
+        }
+
+        [Fact]
+        public void Remove_ExistingGuidPassed_ReturnsOkResult()
+        {
+            // Act
+            var noContentResponse = _userController.Delete(TestUsers.ExistingGuid).Result;
+
+            // Assert
+            Assert.IsType<NoContentResult>(noContentResponse);
+        }
+
+        [Fact]
+        public void Remove_ExistingGuidPassed_RemovesOneItem()
+        {
+            // Act
+            var okResponse = _userController.Delete(TestUsers.ExistingGuid).Result;
+
+            // Assert
+            Assert.Equal(8, _testUserData.Count());
+            Assert.NotEqual(9, _testUserData.Count());
+        }
+        #endregion Remove
     }
 }

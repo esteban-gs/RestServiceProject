@@ -57,6 +57,7 @@ namespace RestServiceProject.Controllers
         [HttpPost]
         public async Task<ActionResult<UserViewModel>> Post([FromBody] UserInputModel userInputModel)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             // if passwords don't match
             if (userInputModel.Password != userInputModel.PasswordConfirm)
                 return BadRequest(new { ErrorDescription = AppConstants.PasswordMatchFailMessage });
@@ -76,6 +77,8 @@ namespace RestServiceProject.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<UserViewModel>> Put(Guid id, [FromBody] UserInputModel userInputModel)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
             if (userInputModel.Password != userInputModel.PasswordConfirm)
                 return BadRequest(new { ErrorDescription = AppConstants.PasswordMatchFailMessage });
 
