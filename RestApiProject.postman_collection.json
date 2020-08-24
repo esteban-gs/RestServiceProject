@@ -1,0 +1,150 @@
+{
+	"info": {
+		"_postman_id": "2bfc6476-e074-43b5-93d6-2141689bf65f",
+		"name": "RestApiProject",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Users",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}/api/user",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}/api/user/1a8d0bfb-74a5-48f4-a729-0a945011ee4f",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"1a8d0bfb-74a5-48f4-a729-0a945011ee4f"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Post User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"test10@test.com\",\r\n    \"password\": \"MySecret123$\",\r\n    \"passwordConfirm\": \"MySecret123$\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}/api/user",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Put User",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"test10UPDATE@test.com\",\r\n    \"password\": \"MySecretj23$\",\r\n    \"passwordConfirm\": \"MySecretj23$\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}/api/user/1a8d0bfb-74a5-48f4-a729-0a945011ee4f",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"1a8d0bfb-74a5-48f4-a729-0a945011ee4f"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete User",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{host}}/api/user/7a8d0bfb-74a5-48f4-a729-0a945011ee4f",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"7a8d0bfb-74a5-48f4-a729-0a945011ee4f"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "6ed3541b-eb4e-4703-9901-71dbaff0bf12",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "c543f7fc-9343-49ed-861b-8e1abd3d8797",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "ff7f3713-dc8e-4ec0-a8f1-cc8f99544a81",
+			"key": "host",
+			"value": "https://localhost:5001"
+		}
+	],
+	"protocolProfileBehavior": {}
+}
